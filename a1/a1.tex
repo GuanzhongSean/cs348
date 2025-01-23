@@ -1,0 +1,272 @@
+\documentclass{article}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amsfonts,amssymb,graphicx}
+\title{\textbf{CS 348 Winter 2025: Assignment 1}}
+\author{Jiaze Xiao \\ 20933691}
+\date{\today}
+\setlength{\parindent}{0pt}
+\begin{document}
+
+\maketitle
+
+\section*{Question 1}
+\subsection*{(a)}
+\begin{itemize}
+    \item Data model:\\
+          A data model is a set of concepts and rules that define the structure and behavior of a database. It specifies the format, types, and relationships of the data stored in the database. A data model is used to organize and manage data, and to ensure data consistency and integrity.
+    \item Data-definition language (DDL):\\
+          DDL is a language used to define the structure of a database. It includes commands to create, modify, and delete tables, indexes, and constraints. DDL is typically used to define the schema of a database, which is the set of tables, their attributes, and their relationships.
+    \item Candidate key:\\
+          A candidate key is a set of one or more attributes that can uniquely identify a tuple in a table. A candidate key is chosen to minimize the risk of data anomalies and ensure data integrity. A candidate key is usually defined as a primary key or a unique index.
+\end{itemize}
+
+\subsection*{(b)}
+Imagine a student's grade record is being updated concurrently by two teachers in different subjects.
+A student's grade record in the database contains:
+\begin{center}
+    \texttt{student = \{"name": "John", "math": 85, "science": 90\}}
+\end{center}
+Concurrent Execution:
+\begin{itemize}
+    \item \textbf{Teacher 1}: The teacher in math updates the grade for John in math to 90.
+    \item \textbf{Teacher 2}: The teacher in science updates the grade for John in science to 85.
+\end{itemize}
+The final record is incorrect because it reflects only one teacher's update: \texttt{\{"math": 85, "science": 85\}} instead of \texttt{\{"math": 90, "science": 85\}}. The concurrent updates caused one update to overwrite the other, leading to lost data.
+
+\newpage
+\subsection*{(c)}
+A foreign key is an attribute (or a set of attributes) in one table that references the primary key in another table. It establishes a relationship between the two tables, ensuring referential integrity. A foreign key constraint enforces referential integrity by ensuring that the value in the foreign key column matches a value in the referenced primary key column or is \texttt{NULL}.
+
+\subsection*{(d)}
+\textbf{F}, the set difference operation (\texttt{R - S}) is monotone with respect to \texttt{R} but non-monotone with respect to \texttt{S}. Since monotonicity depends on which base relation is being considered, the claim that set difference is always non-monotone on its base relations is false.
+
+\subsection*{(e)}
+\begin{itemize}
+    \item When to Use a Foreign Key Constraint and Not a Tuple-Based CHECK:\\
+          For referential integrity between tables. For example, an \texttt{Orders} table contains a column \texttt{CustomerID} that should always reference a valid \texttt{CustomerID} in the \texttt{Customers} table. A foreign key constraint ensures that every \texttt{CustomerID} in the \texttt{Orders} table matches an existing \texttt{CustomerID} in the \texttt{Customers} table.
+    \item When to Use a Tuple-Based CHECK and Not a Foreign Key Constraint:\\
+          For attribute-specific validation. For example, a \texttt{Products} table contains a column \texttt{Price} that should always be greater than or equal to 0. A tuple-based CHECK constraint ensures that every \texttt{Price} in the \texttt{Products} table is greater than or equal to 0.
+\end{itemize}
+
+\subsection*{(f)}
+$$
+    \texttt{COPURCHASES} := \pi_{\texttt{cID1, cID2}} \bigg( \sigma_{\texttt{cID1} \neq \texttt{cID2}} \left( \rho_{(\texttt{cID}\rightarrow\texttt{cID1}, \texttt{oID}\rightarrow\texttt{oID1})} \texttt{Order} \bowtie \rho_{(\texttt{cID}\rightarrow\texttt{cID2}, \texttt{oID}\rightarrow\texttt{oID2})} \texttt{Order} \right) \bigg)
+$$
+
+1. Renaming Columns:
+Rename \texttt{cID} and \texttt{oID} in the first copy of \texttt{Order} to \texttt{cID1} and \texttt{oID1}, and in the second copy to \texttt{cID2} and \texttt{oID2}. This isolates \texttt{pID} as the only common attribute for the join.
+
+$$
+    \rho_{(\texttt{cID} \rightarrow \texttt{cID1}, \texttt{oID} \rightarrow \texttt{oID1})} \texttt{Order}, \quad \rho_{(\texttt{cID} \rightarrow \texttt{cID2}, \texttt{oID} \rightarrow \texttt{oID2})} \texttt{Order}
+$$
+
+2. Natural Join on \texttt{pID}:
+Perform a natural join between the two renamed relations. Since \texttt{pID} is the only common attribute, the join will only keep rows where the \texttt{pID} values match.
+
+$$
+    \rho_{(\texttt{cID} \rightarrow \texttt{cID1}, \texttt{oID} \rightarrow \texttt{oID1})} \texttt{Order} \bowtie \rho_{(\texttt{cID} \rightarrow \texttt{cID2}, \texttt{oID} \rightarrow \texttt{oID2})} \texttt{Order}
+$$
+
+3. Selection of Distinct Customers:
+Use a selection condition to filter rows where $\texttt{cID1} \neq \texttt{cID2}$, ensuring that only pairs of distinct customers are included.
+
+$$
+    \sigma_{\texttt{cID1} \neq \texttt{cID2}}
+$$
+
+4. Projection of Relevant Columns:
+Project the final result to include only the columns \texttt{cID1} and \texttt{cID2}.
+
+$$
+    \pi_{\texttt{cID1, cID2}}
+$$
+
+\newpage
+\subsection*{(g)}
+Let $ A $ be the projection of $ R $ on $ A_1, \ldots, A_{k_1} $ such that $T\subseteq A$:
+$$
+    A := \pi_{A_1, \ldots, A_{k_1}}(R)
+$$
+
+Compute the set of tuples in $ A \times S $ that are not in $ R $ ($t\cdot s\notin R, t\in A$):
+$$
+    M := (A \times S) - R
+$$
+
+Project the invalid tuples (those in $ A $) from $ M $:
+$$
+    M_A := \pi_{A_1, \ldots, A_{k_1}}(M)
+$$
+
+Subtract the invalid tuples $ M_T $ from $ T $ to get the final result:
+$$
+    T := A - M_A
+$$
+
+Final Relational Algebra Expression:
+$$
+    R \div S := \pi_{A_1, \ldots, A_{k_1}}(R) - \pi_{A_1, \ldots, A_{k_1}} \bigg( ( \pi_{A_1, \ldots, A_{k_1}}(R) \times S ) - R \bigg)
+$$
+
+\newpage
+\section*{Question 2}
+\subsection*{(a)}
+\textbf{F}, the \texttt{Prodcut} relation has an designated primary key of \texttt{\{maker, model, type\}}. If \texttt{\{maker, type\}} is a valid candidate key, \texttt{\{maker, model, type\}} would no longer be minimal and could not be the primary key, leading to a contradiction. Hence, \texttt{\{maker, type\}} is not a candidate key.
+
+\subsection*{(b)}
+\textbf{T}, because \texttt{\{model, speed\}} is a superkey for the Laptop relation as it contains the primary key \texttt{\{model\}}, which is sufficient to uniquely identify rows.
+
+\subsection*{(c)}
+\textbf{T}, because the \texttt{Product} table schema specifies that the primary key is \texttt{\{maker, model, type\}}. This means that the combination of the values in the \texttt{maker}, \texttt{model}, and \texttt{type} columns must be unique across all rows in the \texttt{Product} table. The table already has a row (A, 001, pc''), then trying to insert another row with the same values (A, 001, pc'') would violate the uniqueness constraint of the primary key.
+
+\subsection*{(d)}
+\textbf{F}, it will violates the constraint of the models for all the pc products in the \texttt{Product} relation must be contained in the \texttt{PC} relation.
+
+\subsection*{(e)}
+\textbf{T}, because each subset of \texttt{\{color, type, price\}} combined with \texttt{\{model\}} forms a unique superkey. \texttt{\{color, type, price\}} has $2^3=8$ subsets.
+
+\newpage
+\section*{Question 3}
+\subsection*{(a)}
+First, select laptops with \texttt{speed} $\geq 2.3$:
+$$
+    \sigma_{\texttt{speed} \geq 2.3}(\texttt{Laptop})
+$$
+
+Then, natural join the result with the \texttt{Product} table (as they share \texttt{model} attribute) to find the corresponding manufacturer (\texttt{maker}):
+$$
+    \sigma_{\texttt{speed} \geq 2.3}(\texttt{Laptop}) \bowtie \texttt{Product}
+$$
+
+Finally, project the \texttt{maker} attribute to get the final result:
+$$
+    \pi_{\texttt{maker}} \bigg( \sigma_{\texttt{speed} \geq 2.3}(\texttt{Laptop}) \bowtie\texttt{Product} \bigg)
+$$
+
+\subsection*{(b)}
+1. Select rows in \texttt{Product} where \texttt{maker} = 'D':
+$$
+    \sigma_{\texttt{maker} = 'D'}(\texttt{Product})
+$$
+
+2. Perform theta joins with type-specific conditions:
+
+- For \texttt{PC}:
+$$
+    \pi_{\texttt{model, type, price}} \Big(
+    (\sigma_{\texttt{maker} = 'D'}(\texttt{Product}) \bowtie_{\texttt{Product.model} = \texttt{PC.model} \land \texttt{type} = 'pc'} \texttt{PC})
+    \Big)
+$$
+- For \texttt{Laptop}:
+$$
+    \pi_{\texttt{model, type, price}} \Big(
+    (\sigma_{\texttt{maker} = 'D'}(\texttt{Product}) \bowtie_{\texttt{Product.model} = \texttt{Laptop.model} \land \texttt{type} = 'laptop'} \texttt{Laptop})
+    \Big)
+$$
+- For \texttt{Printer}:
+$$
+    \pi_{\texttt{model, type, price}} \Big(
+    (\sigma_{\texttt{maker} = 'D'}(\texttt{Product}) \bowtie_{\texttt{Product.model} = \texttt{Printer.model} \land \texttt{type} = 'printer'} \texttt{Printer})
+    \Big)
+$$
+
+3. Union the projected results:
+$$
+    \begin{aligned}
+             & \Big(\pi_{\texttt{model, type, price}}(\sigma_{\texttt{maker} = 'D'}(\texttt{Product}) \bowtie_{\texttt{Product.model} = \texttt{PC.model} \land \texttt{type} = 'pc'} \texttt{PC})
+        \Big)                                                                                                                                                                                      \\
+        \cup &
+        \Big(
+        \pi_{\texttt{model, type, price}}(\sigma_{\texttt{maker} = 'D'}(\texttt{Product}) \bowtie_{\texttt{Product.model} = \texttt{Laptop.model} \land \texttt{type} = 'laptop'} \texttt{Laptop})
+        \Big)                                                                                                                                                                                      \\
+        \cup &
+        \Big(
+        \pi_{\texttt{model, type, price}}(\sigma_{\texttt{maker} = 'D'}(\texttt{Product}) \bowtie_{\texttt{Product.model} = \texttt{Printer.model} \land \texttt{type} = 'printer'} \texttt{Printer})
+        \Big)
+    \end{aligned}
+$$
+
+\subsection*{(c)}
+1. Get two copies of \texttt{PC} and rename the \texttt{model} attribute to distinguish them in the final output:
+$$
+    \texttt{PC\_1}\leftarrow\rho_{(\texttt{PC\_1},\texttt{model}\rightarrow \texttt{model\_1})}\texttt{PC}
+$$
+$$
+    \texttt{PC\_2}\leftarrow\rho_{(\texttt{PC\_2},\texttt{model}\rightarrow \texttt{model\_2})}\texttt{PC}
+$$
+2. Self-join the \texttt{PC} relations on \texttt{speed} and \texttt{ram} (using \texttt{model\_1} $<$ \texttt{model\_2} to ensure every pair is unique and their elements are distinct):
+$$
+    \texttt{PC\_1} \bowtie_{(\texttt{PC\_1.speed} = \texttt{PC\_2.speed} \land \texttt{PC\_1.ram} = \texttt{PC\_2.ram} \land \texttt{model\_1} < \texttt{model\_2})} \texttt{PC\_2}
+$$
+
+3. Project the relevant attributes (\texttt{model\_1}, \texttt{model\_2}):
+$$
+    \pi_{(\texttt{model\_1}, \texttt{model\_2})} \Big(\texttt{PC\_1} \bowtie_{(\texttt{PC\_1.speed} = \texttt{PC\_2.speed} \land \texttt{PC\_1.ram} = \texttt{PC\_2.ram} \land \texttt{model\_1} < \texttt{model\_2})} \texttt{PC\_2}
+    \Big)
+$$
+
+\newpage
+\subsection*{(d)}
+1. Self-join the \texttt{Printer} table to compare prices and exclude printers that are not the cheapest.
+$$
+    \texttt{ExpensivePrinters} \leftarrow \pi_{\texttt{p1.model}} \Big(
+    \rho_{\texttt{p1}}(\texttt{Printer}) \bowtie_{\texttt{p1.price} > \texttt{p2.price}} \rho_{\texttt{p2}}(\texttt{Printer})
+    \Big)
+$$
+
+2. Find printers that are not in \texttt{ExpensivePrinters} to get the models of the cheapest printers:
+$$
+    \texttt{CheapestPrinters} \leftarrow \pi_{\texttt{model}}(\texttt{Printer}) - \texttt{ExpensivePrinters}
+$$
+
+3. Select printers:
+$$
+    \texttt{PrinterProducts} \leftarrow \sigma_{\texttt{type} = 'printer'}(\texttt{Product})
+$$
+
+4. Natural join with the \texttt{PrinterProducts} table to get the manufacturers:
+$$
+    \texttt{CheapestPrinterProducts} \leftarrow \texttt{CheapestPrinters} \bowtie \texttt{PrinterProducts}
+$$
+
+5. Project the \texttt{maker} attribute to get the final result:
+$$
+    \pi_{\texttt{maker}}(\texttt{CheapestPrinterProducts})
+$$
+
+\subsection*{(e)}
+1. Select printers:
+$$
+    \texttt{PrinterProducts} \leftarrow \sigma_{\texttt{type} = 'printer'}(\texttt{Product})
+$$
+
+2. Self-join to find products with at least 2 distinct manufacturers:
+$$
+    \texttt{Pairs} \leftarrow \rho_{\texttt{P1}}(\texttt{PrinterProducts}) \bowtie_{\texttt{P1.model} = \texttt{P2.model} \land \texttt{P1.maker} < \texttt{P2.maker}} \rho_{\texttt{P2}}(\texttt{PrinterProducts})
+$$
+3. Project the `\texttt{model}` to identify products with at least 2 distinct manufacturers:
+$$
+    \texttt{ModelWithTwoMakers} \leftarrow \pi_{\texttt{P1.model}}(\texttt{Pairs})
+$$
+4. Perform a triple self-join on `\texttt{PrinterProducts}` as we need to find sets of 3 distinct manufacturers for the same `\texttt{model}`. This requires joining 3 instances of the `\texttt{PrinterProducts}` table:
+$$
+    \begin{aligned}
+        \texttt{TripleJoin} \leftarrow
+         & \rho_{\texttt{P1}}(\texttt{PrinterProducts})
+        \bowtie_{\texttt{P1.model} = \texttt{P2.model} \land \texttt{P1.maker} < \texttt{P2.maker}} \\
+         & \rho_{\texttt{P2}}(\texttt{PrinterProducts})
+        \bowtie_{\texttt{P2.model} = \texttt{P3.model} \land \texttt{P2.maker} < \texttt{P3.maker}} \\
+         & \rho_{\texttt{P3}}(\texttt{PrinterProducts})
+    \end{aligned}
+$$
+
+5. Project the `\texttt{model}` to identify products with at least 3 distinct manufacturers:
+$$
+    \texttt{ModelsWithThreeMakers} \leftarrow \pi_{\texttt{P1.model}}(\texttt{TripleJoin})
+$$
+6. Remove models with at least 3 manufacturers from those with at least 2 manufacturers and get models with exactly 2 manufacturers:
+$$
+    \texttt{ExactlyTwoMakers} \leftarrow \texttt{ModelWithTwoMakers} - \texttt{TriplePairs}
+$$
+
+\end{document}
