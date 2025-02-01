@@ -5,7 +5,7 @@ SELECT
     COUNT(e.snum) AS class_size
 FROM
     class c
-    NATURAL JOIN faculty f
+    JOIN faculty f ON c.fid = f.fid
     LEFT OUTER JOIN enrolled e ON c.name = e.cname
 GROUP BY
     c.name,

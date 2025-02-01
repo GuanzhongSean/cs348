@@ -8,10 +8,10 @@ WHERE
         SELECT
             DISTINCT snum
         FROM
-            enrolled AS e
-            JOIN class AS c ON e.cname = c.name
+            enrolled
+            JOIN class ON cname = name
         WHERE
-            c.fid IN (
+            fid IN (
                 SELECT
                     fid
                 FROM

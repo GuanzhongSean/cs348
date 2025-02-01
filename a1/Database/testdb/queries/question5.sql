@@ -2,11 +2,9 @@
 SELECT
     COUNT(*) AS student_count
 FROM
-    student
-WHERE
-    snum IN (
+    (
         SELECT
-            snum
+            DISTINCT snum
         FROM
             enrolled
         WHERE

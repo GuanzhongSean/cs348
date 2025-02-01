@@ -2,7 +2,7 @@
 SELECT
     fname
 FROM
-    faculty AS f
+    faculty
 WHERE
     fid NOT IN (
         SELECT
