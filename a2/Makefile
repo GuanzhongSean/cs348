@@ -1,5 +1,5 @@
-all:
-	javac -cp duckdb_jdbc-1.1.3.jar EnrollmentApp.java
+all: database
+	javac EnrollmentApp.java
 	java -cp .:duckdb_jdbc-1.1.3.jar EnrollmentApp
 
 database:
@@ -7,3 +7,11 @@ database:
 
 submit:
 	marmoset_submit cs348 A2\ -\ Part\ 2 EnrollmentApp.java
+
+pdf:
+	pdflatex a2.tex
+
+clean:
+	rm -f *.class cs348 a2.pdf
+
+.PHONY: all database submit pdf clean
