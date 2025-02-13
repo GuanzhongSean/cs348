@@ -1,6 +1,38 @@
 \documentclass{article}
 \usepackage[a4paper,margin=1in]{geometry}
 \usepackage{amsmath,amsfonts,amssymb,graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegray}{gray}{0.9}
+\definecolor{darkgreen}{rgb}{0,0.5,0}
+\definecolor{darkblue}{rgb}{0,0,0.6}
+\lstdefinelanguage{SQL}{
+  keywords={SELECT, FROM, WHERE, JOIN, ON, AS, GROUP, BY, ORDER, HAVING, INSERT, INTO, UPDATE, DELETE, CREATE, TABLE, DROP, ALTER, ADD, PRIMARY, FOREIGN, KEY, CONSTRAINT, CHECK, DEFAULT, UNION, ALL, DISTINCT, WITH, RECURSIVE},
+  keywordstyle=\color{darkblue}\bfseries,
+  morekeywords={[2]{COUNT, SUM, AVG, MIN, MAX}},
+  keywordstyle={[2]\color{darkgreen}\bfseries},
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{--},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{red},
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstset{
+  language=SQL,
+  backgroundcolor=\color{codegray},
+  basicstyle=\ttfamily\footnotesize,
+  columns=fullflexible,
+  breaklines=true,
+  keepspaces=true,
+  showstringspaces=false,
+  frame=single,
+  rulecolor=\color{black}
+}
 \title{\textbf{CS 348 Winter 2025: Assignment 2 - Part I}}
 \author{Jiaze Xiao \\ 20933691}
 \date{\today}
@@ -10,6 +42,28 @@
 \maketitle
 
 \section*{Question 1}
+\begin{lstlisting}
+    WITH RECURSIVE ShortestPaths(dst, cost) AS (
+        -- Only keep the shortest paths from Waterloo to each (reachable) destination
+        SELECT dst, MIN(cost)
+        FROM (
+            -- Base case: Direct flights from Waterloo
+            SELECT dst, cost
+            FROM Flights
+            WHERE src = 'Waterloo'
+
+            UNION
+
+            -- Recursive case: Extend paths from Waterloo with i edges
+            SELECT f.dst, sp.cost + f.cost as cost
+            FROM ShortestPaths sp
+            JOIN Flights f ON sp.dst = f.src
+        )
+        GROUP BY dst
+    )
+    SELECT * FROM ShortestPaths;
+\end{lstlisting}
+My solution starts with all direct flights from ``Waterloo''. At each recursive step, expands paths while only keeping the shortest path per destination at each step. The \texttt{MIN(cost) GROUP BY dst} inside the recursive CTE eliminates unnecessary longer paths immediately, keeping the intermediate relation at most size $n$. Since we extend by one edge per step and the graph is guaranteed a DAG, the recursion stops in at most $d+1$ iterations.
 
 \newpage
 \section*{Question 2}
