@@ -1,5 +1,7 @@
 import java.sql.*;
 import java.util.Scanner;
+import java.util.List;
+import java.util.ArrayList;
 
 // sample input: localhost 5432 database_name username password
 public class EnrollmentApp {
@@ -211,9 +213,10 @@ public class EnrollmentApp {
         }
 
         String[] classArray = classes.split(",");
+        List<Integer> sectionArray = new ArrayList<>();
         // If no classes are provided, get all classes the student is enrolled in
         if (classes.isEmpty()) {
-            String getClassesQuery = "SELECT cname FROM enrolled WHERE snum = ?";
+            String getClassesQuery = "SELECT cname, section FROM enrolled WHERE snum = ?";
             PreparedStatement getClassesStmt = connection.prepareStatement(getClassesQuery);
             getClassesStmt.setInt(1, userID);
             ResultSet classesResult = getClassesStmt.executeQuery();
@@ -224,6 +227,7 @@ public class EnrollmentApp {
                 do {
                     String className = classesResult.getString("cname");
                     classes += className + ",";
+                    sectionArray.add(classesResult.getInt("section"));
                 } while (classesResult.next());
             }
             classArray = classes.split(",");
@@ -250,11 +254,13 @@ public class EnrollmentApp {
                 if (!enrollmentResult.next()) {
                     System.err.println(INVALID_ENROLLMENT);
                     return;
+                } else {
+                    sectionArray.add(enrollmentResult.getInt("section"));
                 }
             }
         }
 
-        // Find classmates who are enrolled in all the same classes
+        // Find classmates who are enrolled in all the same classes (and sections)
         String commonClassmateQuery = "SELECT * FROM (";
         for (int i = 0; i < classArray.length; i++) {
             if (i != 0) {
@@ -262,6 +268,7 @@ public class EnrollmentApp {
             }
             commonClassmateQuery += "SELECT s.sname FROM enrolled e JOIN student s ON e.snum = s.snum WHERE e.cname = \'"
                     + classArray[i] + "\'";
+            // commonClassmateQuery += " AND e.section = " + sectionArray.get(i);
         }
         commonClassmateQuery += ") ORDER BY sname";
         Statement commonClassmateStmt = connection.createStatement();
