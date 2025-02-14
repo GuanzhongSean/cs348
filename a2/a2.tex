@@ -8,7 +8,7 @@
 \definecolor{darkgreen}{rgb}{0,0.5,0}
 \definecolor{darkblue}{rgb}{0,0,0.6}
 \lstdefinelanguage{SQL}{
-  keywords={SELECT, FROM, WHERE, JOIN, ON, AS, GROUP, BY, ORDER, HAVING, INSERT, INTO, UPDATE, DELETE, CREATE, TABLE, DROP, ALTER, ADD, PRIMARY, FOREIGN, KEY, CONSTRAINT, CHECK, DEFAULT, UNION, ALL, DISTINCT, WITH, RECURSIVE},
+  keywords={SELECT, FROM, WHERE, JOIN, ON, AS, GROUP, BY, ORDER, HAVING, INSERT, INTO, UPDATE, DELETE, CREATE, TABLE, DROP, ALTER, ADD, PRIMARY, FOREIGN, KEY, CONSTRAINT, CHECK, DEFAULT, UNION, ALL, DISTINCT, WITH, RECURSIVE, LIMIT, DESC, ASC},
   keywordstyle=\color{darkblue}\bfseries,
   morekeywords={[2]{COUNT, SUM, AVG, MIN, MAX}},
   keywordstyle={[2]\color{darkgreen}\bfseries},
@@ -68,18 +68,157 @@ My solution starts with all direct flights from ``Waterloo''. At each recursive 
 \newpage
 \section*{Question 2}
 \subsection*{(a)}
+DDL Query for \texttt{SaleDetails} Table:
+\begin{lstlisting}
+  CREATE TABLE SaleDetails (
+      ISBN VARCHAR(30),
+      sid INT,
+      quantity INT,
+      PRIMARY KEY (ISBN, sid),
+      FOREIGN KEY (ISBN) REFERENCES Book,
+      FOREIGN KEY (sid) REFERENCES Sale
+  );
+\end{lstlisting}
+Adding Constraint for Quantity After Table Creation:
+\begin{lstlisting}
+  ALTER TABLE SaleDetails
+  ADD CONSTRAINT quantity_check CHECK (quantity >= 1 AND quantity <= 100);
+\end{lstlisting}
 
 \newpage
 \subsection*{(b)}
+SQL Query for the \texttt{Master} Relation:
+\begin{lstlisting}
+  SELECT *
+  FROM (
+    SELECT
+      A.aid,
+      A.name AS author_name,
+      B.ISBN,
+      B.name AS book_name,
+      B.copies AS book_copies
+    FROM Author A
+    JOIN Writes W ON A.aid = W.aid
+    JOIN Book B ON W.ISBN = B.ISBN
+    WHERE B.copies > 0
+
+    UNION
+
+    SELECT
+      A1.aid,
+      A1.name AS author_name,
+      NULL AS ISBN,
+      NULL AS book_name,
+      NULL AS book_copies
+    FROM Author A1
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM Author A2
+      JOIN Writes W ON A2.aid = W.aid
+      JOIN Book B ON W.ISBN = B.ISBN
+      WHERE B.copies > 0 AND A1.aid = A2.aid
+    )
+
+    UNION
+
+    SELECT
+      NULL AS aid,
+      NULL AS author_name,
+      B.ISBN,
+      B.name AS book_name,
+      B.copies AS book_copies
+    FROM Book B
+    LEFT JOIN Writes W ON B.ISBN = W.ISBN
+    LEFT JOIN Author A ON A.aid = W.aid
+    WHERE (A.aid IS NULL OR A.name IS NULL) AND B.copies > 0
+  );
+\end{lstlisting}
 
 \newpage
 \subsection*{(c)}
+\begin{lstlisting}
+  WITH PublisherSales AS (
+      SELECT
+          B.pid,
+          B.ISBN,
+          SUM(SD.quantity) AS total_quantity
+      FROM SaleDetails SD
+      JOIN Book B ON SD.ISBN = B.ISBN
+      GROUP BY B.pid, B.ISBN
+  ),
+  FilteredPublishers AS (
+      SELECT pid
+      FROM PublisherSales
+      GROUP BY pid
+      HAVING COUNT(DISTINCT ISBN) >= 2
+  ),
+  PublisherHighestSales AS (
+      SELECT PS.pid, PS.ISBN, PS.total_quantity
+      FROM PublisherSales PS
+      JOIN FilteredPublishers FP ON PS.pid = FP.pid
+      WHERE PS.ISBN = (
+          SELECT PS2.ISBN
+          FROM PublisherSales PS2
+          WHERE PS2.pid = PS.pid
+          ORDER BY PS2.total_quantity DESC
+          LIMIT 1
+      )
+  )
+  SELECT B.name, PHS.total_quantity
+  FROM PublisherHighestSales PHS
+  JOIN Book B ON PHS.ISBN = B.ISBN;
+\end{lstlisting}
 
 \newpage
 \section*{Question 3}
 \subsection*{(a)}
+In a binary relation $R(A,B)$, the only possible non-trivial functional dependencies are:
+\begin{itemize}
+  \item $ A \rightarrow B $
+  \item $ B \rightarrow A $
+\end{itemize}
+Since $ R $ has only two attributes, any non-trivial functional dependency must determine all attributes other than those on the left-hand side. For example:
+\begin{itemize}
+  \item If $ A \to B $, then $ A $ must be a key because it determines all other attributes in $ R $.
+  \item Similarly, if $ B \to A $, then $ B $ must be a key.
+\end{itemize}
+
+In either case, the determinant of the functional dependency is a superkey. Therefore, $ R(A, B) $ satisfies the BCNF condition.
 
 \subsection*{(b)}
+\subsubsection*{(i)}
+Use the \texttt{AttributeClosure} algorithm to compute $ A^+ $:
+
+1. Start with $ \text{result} = \{A\} $.
+
+2. Iterate through the functional dependencies:
+\begin{itemize}
+  \item $ fd_3: A \to D $: Add $ D $ to $ \text{result} $. Now $ \text{result} = \{A, D\} $.
+  \item No other functional dependencies have $ A $ or $ D $ on the left-hand side.
+
+\end{itemize}
+Final result: $ A^+ = \{A, D\} $.
+
+\subsubsection*{(ii)}
+Use the \texttt{AttributeClosure} algorithm to compute $ E^+ $:
+
+1. Start with $ \text{result} = \{E\} $.
+
+2. Iterate through the functional dependencies:
+\begin{itemize}
+  \item $ fd_1: E \to AB $: Add $ A $ and $ B $ to $ \text{result} $. Now $ \text{result} = \{E, A, B\} $.
+  \item $ fd_3: A \to D $: Add $ D $ to $ \text{result} $. Now $ \text{result} = \{E, A, B, D\} $.
+  \item $ fd_2: BD \to C $: Now $ \text{result} = \{E, A, B, D, C\} $.
+  \item All attributes are in result, no more attributes will be added.
+\end{itemize}
+Final result: $ E^+ = \{A, B, C, D, E\} $.
+
+\subsubsection*{(iii)}
+By definition, $X^+$ contains all attributes that are functionally dependent on $X$. Thus, if $X^+$ contains all attributes, $X$ can determine all attributes uniquely which means $X$ can be a primary key.
+\begin{itemize}
+  \item $ A^+ = \{A, D\} $: Does not include all attributes ($ B, C, E $ are missing). Thus, $ A $ cannot be a primary key.
+  \item $ E^+ = \{A, B, C, D, E\} $: Includes all attributes. Thus, $ E $ can be a primary key.
+\end{itemize}
 
 \newpage
 \section*{Question 4}
