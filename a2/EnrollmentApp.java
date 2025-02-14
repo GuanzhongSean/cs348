@@ -268,7 +268,7 @@ public class EnrollmentApp {
             }
             commonClassmateQuery += "SELECT s.sname FROM enrolled e JOIN student s ON e.snum = s.snum WHERE e.cname = \'"
                     + classArray[i] + "\'";
-            // commonClassmateQuery += " AND e.section = " + sectionArray.get(i);
+            commonClassmateQuery += " AND e.section = " + sectionArray.get(i);
         }
         commonClassmateQuery += ") ORDER BY sname";
         Statement commonClassmateStmt = connection.createStatement();
