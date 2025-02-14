@@ -223,13 +223,81 @@ By definition, $X^+$ contains all attributes that are functionally dependent on 
 \newpage
 \section*{Question 4}
 \subsection*{(a)}
+Single attributes:
+\begin{itemize}
+  \item $ A^+ = \{A\} $ (no FDs directly involve $ A $ alone).
+  \item $ B^+ = \{B\} $ (no FDs directly involve $ B $ alone).
+  \item $ C^+ = \{C\} $ (no FDs directly involve $ C $ alone).
+  \item $ D^+ = \{D\} $ (no FDs directly involve $ D $ alone).
+  \item $ E^+ = \{E\} $ (no FDs directly involve $ E $ alone).
+  \item $ F^+ = \{F\} $ (no FDs directly involve $ F $ alone).
+\end{itemize}
 
+Two-attribute combinations:
+\begin{itemize}
+  \item $ AB^+ = \{A, B, C, E\} $ (using $ AB \to CE $).
+        \begin{itemize}
+          \item Add $ D $ using $ AC \to DE $: $ AB^+ = \{A, B, C, D, E\} $.
+          \item Add $ F $ using $ BE \to CF $: $ AB^+ = \{A, B, C, D, E, F\} $.
+          \item $ AB $ determines all attributes, so $ AB $ is a candidate key.
+        \end{itemize}
+  \item $ AC^+ = \{A, C, D, E\} $ (using $ AC \to DE $).
+        \begin{itemize}
+          \item Add $ B $ using $ ACD \to B $: $ AC^+ = \{A, B, C, D, E\} $.
+          \item Add $ F $ using $ BE \to CF $: $ AC^+ = \{A, B, C, D, E, F\} $.
+          \item $ AC $ determines all attributes, so $ AC $ is a candidate key.
+        \end{itemize}
+  \item $ BF^+ = \{B, F, A\} $ (using $ BF \to A $).
+        \begin{itemize}
+          \item Add $ C $ using $ AB \to CE $: $ BF^+ = \{A, B, C, E, F\} $.
+          \item Add $ D $ using $ AC \to DE $: $ BF^+ = \{A, B, C, D, E, F\} $.
+          \item $ BF $ determines all attributes, so $ BF $ is a candidate key.
+        \end{itemize}
+  \item $ BE^+ = \{B, E, C, F\} $ (using $ BE \to CF $).
+        \begin{itemize}
+          \item Add $ A $ using $ BF \to A $: $ BE^+ = \{A, B, C, E, F\} $.
+          \item Add $ D $ using $ AC \to DE $: $ BE^+ = \{A, B, C, D, E, F\} $.
+          \item $ BE $ determines all attributes, so $ BE $ is a candidate key.
+        \end{itemize}
+\end{itemize}
+There is no other minimal key. Thus, the candidate keys are:
+$$
+  \boxed{\{AB, AC, BF, BE\}}
+$$
 \subsection*{(b)}
-
+Split RHS into Single Attributes:
+$$
+  F = \{ AB \to C, AB \to E, ACD \to B, BE \to C, BE \to F, AC \to D, AC \to E, BF \to A \}.
+$$
+Simplify LHS:
+\begin{itemize}
+  \item $ACD \to B$ can be simplified to $AC \to B$ since $AC \to D$, $D$ is not neseccery in the dependency.
+\end{itemize}
+Remove Redundant FDs:
+\begin{itemize}
+  \item $ BE \to C $: From $ BE \to F $, $ BF \to A $, and $ AB \to C $, we can derive $ BE \to C $. Thus, $ BE \to C $ is redundant and can be removed.
+  \item $ AB \to E $: From $ AC \to E $ and $ AB \to C $, we can derive $ AB \to E $. Thus, $ AB \to E $ is redundant and can be removed.
+\end{itemize}
+After removing the redundant FDs ($ BE \to C $, and $ AB \to E $), the minimal cover becomes:
+$$
+  \boxed{F_{\text{min}} = \{ AB \to C, AC \to B, BE \to F, AC \to D, AC \to E, BF \to A \}}
+$$
 \newpage
 \subsection*{(c)}
+\subsubsection*{$AB\to E$:}
+In $R_1$, the fd $AB\to C$ is preserved.\\
+In $R_3$, the fd $AC\to E$ is preserved.\\
+We can derive the fd $AB\to E$ from them. Thus, $AB\to E$ is preserved.
+\subsubsection*{$BE\to F$:}
+Since $B$ and $E$ are split across different relations, it is impossible to preserve $BE\to F$.
 
 \subsection*{(d)}
-
+$$A^+=\{A,B\},\quad ED^+=\{A,B,D,E\}$$
+Since $A$ is not a superkey of $R_2$ and $A\to B$ is not trivial, $R_2$ violates $A\to B$. $R_2$ will be decompsed to:
+$$AB\quad\text{and}\quad ACDE$$
+Since $ED$ is not a super key of $ACDE$ and $ED\to A$ is not trivial. $ACDE$ will be decompsed to:
+$$ADE\quad\text{and}\quad CDE$$
+As a \texttt{BCNF} lossless-join decomposition of $R_2$ is:
+$$\boxed{\{AB, ADE, CDE\}}$$
 \newpage
 \end{document}
