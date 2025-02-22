@@ -120,7 +120,7 @@ public class EnrollmentApp {
         checkStudentStmt.setInt(1, userID);
         ResultSet studentResult = checkStudentStmt.executeQuery();
         if (!studentResult.next()) {
-            System.err.println(INVALID_ID);
+            System.out.println(INVALID_ID);
             return;
         }
 
@@ -141,7 +141,7 @@ public class EnrollmentApp {
         getClassesStmt.setInt(1, userID);
         ResultSet classesResult = getClassesStmt.executeQuery();
         if (!classesResult.next()) {
-            System.err.println(NO_ENROLLMENT);
+            System.out.println(NO_ENROLLMENT);
             return;
         } else {
             do {
@@ -180,7 +180,7 @@ public class EnrollmentApp {
         conflictStmt.setInt(1, userID);
         ResultSet conflictResult = conflictStmt.executeQuery();
         if (conflictResult.next()) {
-            System.err.println(CONFLICTING_COURSE);
+            System.out.println(CONFLICTING_COURSE);
             do {
                 String className = conflictResult.getString("name");
                 String meetsAt = conflictResult.getString("meets_at");
@@ -208,7 +208,7 @@ public class EnrollmentApp {
         checkStudentStmt.setInt(1, userID);
         ResultSet studentResult = checkStudentStmt.executeQuery();
         if (!studentResult.next()) {
-            System.err.println(INVALID_ID);
+            System.out.println(INVALID_ID);
             return;
         }
 
@@ -221,7 +221,7 @@ public class EnrollmentApp {
             getClassesStmt.setInt(1, userID);
             ResultSet classesResult = getClassesStmt.executeQuery();
             if (!classesResult.next()) {
-                System.err.println(NO_ENROLLMENT);
+                System.out.println(NO_ENROLLMENT);
                 return;
             } else {
                 do {
@@ -239,7 +239,7 @@ public class EnrollmentApp {
                 checkClassStmt.setString(1, className.trim());
                 ResultSet classResult = checkClassStmt.executeQuery();
                 if (!classResult.next()) {
-                    System.err.println(INVALID_CLASS);
+                    System.out.println(INVALID_CLASS);
                     return;
                 }
             }
@@ -252,7 +252,7 @@ public class EnrollmentApp {
                 checkEnrollmentStmt.setString(2, className.trim());
                 ResultSet enrollmentResult = checkEnrollmentStmt.executeQuery();
                 if (!enrollmentResult.next()) {
-                    System.err.println(INVALID_ENROLLMENT);
+                    System.out.println(INVALID_ENROLLMENT);
                     return;
                 } else {
                     sectionArray.add(enrollmentResult.getInt("section"));
@@ -295,7 +295,7 @@ public class EnrollmentApp {
         checkClassStmt.setString(1, className);
         ResultSet classResult = checkClassStmt.executeQuery();
         if (!classResult.next()) {
-            System.err.println(INVALID_CLASS);
+            System.out.println(INVALID_CLASS);
             return;
         }
 
