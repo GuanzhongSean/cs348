@@ -1,9 +1,9 @@
-.venv/
+/.venv/
 *.aux
 *.fdb_latexmk
 *.fls
 *.log
-*.pdf
+a?.pdf
 *.synctex.gz
-*.zip
+a?.zip
 *.class
