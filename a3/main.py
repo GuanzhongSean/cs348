@@ -21,9 +21,9 @@ def printTree(node, level=0):
         printTree(node.right, level + 1)
         if node.isLeaf():
             assert (1 == len(node.rels))
-            print("\t" * level + node.rels[0].name)
+            print("\t" * level + str(node.rels[0]))
         else:
-            print("\t" * level + "JO(" + str(node.estOutCard) + ")")
+            print("\t" * level + str(node))
         printTree(node.left, level + 1)
 
 
