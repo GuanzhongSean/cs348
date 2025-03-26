@@ -25,15 +25,6 @@ class JoinGraph:
             lines = f.readlines()
             self._load(lines)
 
-    def getBestJoinOrder(self):
-        """
-        Compute the join order with lowest cost.
-        Return : JoinPlan
-            root of the join tree
-        """
-        # You must implement this function
-        pass
-
     def _load(self, lines: list) -> None:
         """
         Inject join relations and conditions
@@ -47,20 +38,55 @@ class JoinGraph:
         relationNameIdxMap = {}
         for i in range(numRels):
             relationName = "R" + str(i)
-            self.rels[i] = Relation(relationName, i, int(cardinalities[i]))
+            self.rels[i] = Relation(relationName, i, int(cardinalities[i].strip()))
             relationNameIdxMap[relationName] = i
         # inject foreign keys
         foreignRelationNames = lines[2].split(",")
         assert (len(foreignRelationNames) == numRels - 1)
         self.joinConditions = [None] * (numRels - 1)
         for i in range(numRels - 1):
-            foreignRelationIdx = relationNameIdxMap[foreignRelationNames[i]]
+            foreignRelationIdx = relationNameIdxMap[foreignRelationNames[i].strip()]
             if i == foreignRelationIdx:
                 self.joinConditions[i] = JoinCondition(self.rels[i+1], self.rels[i])
             elif i + 1 == foreignRelationIdx:
                 self.joinConditions[i] = JoinCondition(self.rels[i], self.rels[i+1])
             else:
                 assert (False)
+
+    def getBestJoinOrder(self):
+        """
+        Compute the join order with lowest cost.
+        Return : JoinPlan
+            root of the join tree
+        """
+        n = len(self.rels)
+        if n == 0:
+            return JoinPlan(None, None, [], 0)
+        if n == 1:
+            return JoinPlan(None, None, [self.rels[0]], self.rels[0].cardinality)
+
+        dp = [[None for _ in range(n)] for _ in range(n)]
+
+        for i in range(n):
+            rel = self.rels[i]
+            dp[i][i] = JoinPlan(None, None, [rel], rel.cardinality)
+
+        for length in range(2, n + 1):
+            for start in range(n - length + 1):
+                end = start + length - 1
+                best_plan = None
+                for k in range(start, end):
+                    left = dp[start][k]
+                    right = dp[k + 1][end]
+                    if left.estOutCard < right.estOutCard:
+                        left, right = right, left
+                    sub_rels = self.rels[start:end + 1]
+                    cur_plan = JoinPlan(left, right, sub_rels, self.getCardinality(sub_rels))
+                    if best_plan is None or cur_plan.estCost < best_plan.estCost:
+                        best_plan = cur_plan
+                dp[start][end] = best_plan
+
+        return dp[0][n - 1]
 
     def getCardinality(self, inRels: list) -> int:
         """
@@ -69,8 +95,30 @@ class JoinGraph:
         Output: int
             estimated output cardinality of given join relations
         """
-        # You must implement this function
-        pass
+        assert (len(inRels) >= 0)
+        if len(inRels) == 0:
+            return 0
+        if len(inRels) == 1:
+            return inRels[0].cardinality
+
+        # Assume inRels are sorted by index.
+        start_idx = inRels[0].idx
+        end_idx = inRels[-1].idx
+
+        # Calculate product of all relation cardinalities.
+        numerator = 1
+        for r in inRels:
+            numerator *= r.cardinality
+
+        # Calculate product of F(Rt, Rt+1) for t in [start_idx .. end_idx-1].
+        denominator = 1
+        for i in range(start_idx, end_idx):
+            jc = self.joinConditions[i]  # join condition for R_i and R_{i+1}
+            primary = jc.primaryRel
+            denominator *= primary.cardinality
+
+        est = numerator / denominator
+        return int(est)
 
 
 class Relation:
@@ -103,6 +151,9 @@ class Relation:
         """
         return self.name + "(" + str(self.idx) + "):" + str(self.cardinality)
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 class JoinCondition:
     """
@@ -112,7 +163,7 @@ class JoinCondition:
     -----------
     primaryRelation : Relation
         relation containing primary key
-    foreignRelation : int
+    foreignRelation : Relation
         relation containing foreign key
     """
 
@@ -164,3 +215,13 @@ class JoinPlan:
         Check if this is the leaf
         """
         return self.left is None and self.right is None
+
+    def __str__(self) -> str:
+        """
+        Represent relation in the format of JO(estOutCard)
+        E.g. JO(50)
+        """
+        return "JO(" + str(self.estOutCard) + ")"
+
+    def __repr__(self) -> str:
+        return self.__str__()
