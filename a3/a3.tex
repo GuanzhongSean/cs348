@@ -33,6 +33,25 @@
   frame=single,
   rulecolor=\color{black}
 }
+
+\usepackage{forest}
+\forestset{
+  default preamble={
+    for tree={
+      draw,
+      rounded corners,
+      align=center,
+      top color=white,
+      bottom color=blue!10,
+      edge={->,>=latex},
+      parent anchor=south,
+      child anchor=north,
+      grow'=south
+    }
+  }
+}
+
+
 \title{\textbf{CS 348 Winter 2025: Assignment 3 - Part I}}
 \author{Jiaze Xiao \\ 20933691}
 \date{\today}
@@ -43,17 +62,94 @@
 
 \section*{Question 1}
 \subsection*{(a)}
-
+The query is a selection query that requires scanning the entire table. While increaing memory does not improve I/O, Option (1) still can't avoid scanning the entire table (no index), so every block still must be read. For Option (2), it reduces the time per I/O operation, meaning we scan the same number of blocks faster. As a result, Option (2) is more effective.
 \subsection*{(b)}
+Due to the \texttt{ORDER BY} query, sorting is required, and we have no index, so external sorting is needed. Given the I/O cost analysis from course slides:
+$$
+  \text{Total I/O} = 2B(R)\cdot\left(1+\left\lceil\log_{M-1}\left\lceil\dfrac{B(R)}{M}\right\rceil\right\rceil\right)
+$$
+
+For Option (1),
+\begin{itemize}
+  \item Case 1: $M=101$
+        $$\text{Total I/O} = 2000000\cdot\left(1+\left\lceil\log_{100}\left\lceil\dfrac{1000000}{101}\right\rceil\right\rceil\right)=6000000$$
+  \item Case 1: $M=1001$
+        $$\text{Total I/O} = 2000000\cdot\left(1+\left\lceil\log_{1000}\left\lceil\dfrac{1000000}{1001}\right\rceil\right\rceil\right)=4000000$$
+\end{itemize}
+We have 33\% speed-up which is greater than 10\% of Option (2). As a result, Option (1) is more effective.
 
 \newpage
 \section*{Question 2}
 \subsection*{(a)}
+\begin{figure}[h!]
+  \centering
+  \begin{forest}
+    [$\pi_{\text{title, author}}$
+      [$\bowtie_{\text{Book.bookID = Order.bookID}}$
+          [$\sigma_{\text{author LIKE ``\%Kondo''}}$
+              [$\pi_{\text{title, author, bookID}}$(Book)]]
+            [$\pi_{\text{bookID}}$
+              [$\bowtie_{\text{Cust.custID = Order.custID}}$
+                  [$\pi_{\text{custID}}$
+                      [$\sigma_{\text{state = ``NC''}}$[$\pi_{\text{state, custID}}$(Cust)]]
+                    ]
+                    [$\pi_{\text{custID, bookID}}$
+                      [$\sigma_{\text{shipDate} > :\text{today} - 60}$
+                          [$\pi_{\text{shipDate, custID, bookID}}$(Order)]]
+                    ]
+                ]
+            ]
+        ]
+    ]
+  \end{forest}
+  \caption{Relational algebra expression tree for Question 2(a)}
+\end{figure}
+
 
 \newpage
 \subsection*{(b)}
+Plan:
+\begin{itemize}
+  \item Scan all of Order to apply selection: 6{,}000 I/Os
+  \item Filter Order: $60{,}000 / 1{,}000 = 60$ tuples $\Rightarrow$ 6 blocks.
+  \item Use improved Block Nested Loop Join with 6 blocks of filtered Order as outer and Inventory as inner:
+        $$
+          \text{I/O cost of BNLJ} = B(R)+\left\lceil\dfrac{B(R)}{M-2}\right\rceil \cdot B(S) = 6 + 4{,}000
+        $$
+        The first $B(R)$ can be ignored if we pin the selected 6 blocks from Order in memory.
+  \item Output the join result: $60\times 40{,}000/2{,}000=120$
+  \item Thus,
+        $$
+          \boxed{
+            \text{Total I/O cost} = 10{,}000 + 6 (\text{if the selected blocks not pinned}) + 120(\text{if we count output})}
+        $$
+\end{itemize}
 
 \subsection*{(c)}
+Plan:
+\begin{itemize}
+  \item The index on Order(orderID) does not help the selection, because shipDate is not the indexing attribute. We still must scan all 6{,}000 blocks of Order
+  \item Scan Order to get 60 matching tuples (6 blocks).
+  \item Inventory has 40,000 rows, so 4,000 leaf pages (10 rows per leaf).
+
+        The B$^+$-tree has maximum fan-out = 100, with all levels full except perhaps the root.
+
+        Level 1: Root node
+
+        Level 2: Up to 100 children
+
+        Level 3: Up to $100\times100=10,000$ leaves, which is more than enough to store 4,000 leaf pages.
+
+        So the tree height is 3 (root → internal node → leaf).
+  \item For each tuple selected from Order, use the clustered B$^+$-tree index on Inventory to lookup by bookID, with an estimate of 40{,}000/2{,}000=20 matching tuples, so 2 leaf pages.
+  \item Cost of an index-lookup = root + internal + 2 leaf pages $\Rightarrow$ 4 I/Os per lookup $\Rightarrow$ 240 I/Os in total.
+  \item Same 120 output I/Os
+  \item Thus,
+        $$
+          \boxed{
+            \text{Total I/O cost} = 6{,}240 + 6 (\text{if the selected blocks not pinned}) + 120(\text{if we count output})}
+        $$
+\end{itemize}
 
 \newpage
 \section*{Question 3}

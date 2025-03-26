@@ -114,8 +114,7 @@ class JoinGraph:
         denominator = 1
         for i in range(start_idx, end_idx):
             jc = self.joinConditions[i]  # join condition for R_i and R_{i+1}
-            primary = jc.primaryRel
-            denominator *= primary.cardinality
+            denominator *= jc.primaryRel.cardinality
 
         est = numerator / denominator
         return int(est)
