@@ -105,7 +105,6 @@ We have 33\% speed-up which is greater than 10\% of Option (2). As a result, Opt
   \caption{Relational algebra expression tree for Question 2(a)}
 \end{figure}
 
-
 \newpage
 \subsection*{(b)}
 Plan:
@@ -153,16 +152,42 @@ Plan:
 
 \newpage
 \section*{Question 3}
+The difference between the two plans without any assumption:
+\begin{itemize}
+  \item Plan 1 returns each row once if there is at least one matching row in T2. Multiple matching T2 rows do not cause duplicates: T1 is either included once or not at all.
+  \item Plan 2 returns one copy of T1 for every matching row in T2. If a single T1 row has multiple matches in T2, it appears multiple times in the result.
+\end{itemize}
+
 \subsection*{(a)}
+\textbf{Answer: False (F)}
+
+\leavevmode\\
+Even if $X$ is the PK of $T1$, there is no guarantee that $T2$ will have at most one row matching a particular $T1.X$. $T2$ could still contain many rows with the same $W$ value. In Plan 1, you would return each matching $T1$ row once. In Plan 2, you would return multiple duplicates of that $T1$ row if $T2$ has multiple matches, thus yielding a different (larger) multiset of rows in the output.
 
 \newpage
 \subsection*{(b)}
+\textbf{Answer: True (T)}
+
+\leavevmode\\
+If $W$ is the PK of $T2$, then there is at most one row in $T2$ having a particular $W$ value. That means each row in $T1$ can match  at most one  row in $T2$. Thus:
+
+\begin{itemize}
+  \item In Plan 1, if a given $T1$ row finds a matching $T2$ row, we output that $T1$ row once.
+  \item In Plan 2, that $T1$ row also matches exactly one $T2$ row, so it appears once.
+\end{itemize}
+
+Hence the output rows are the same in both plans.
 
 \subsection*{(c)}
+\textbf{Answer: False (F)}
+
+\leavevmode\\
+While $T2.W$ being a foreign key to $T1.X$ guarantees that every $T2$ row matches  some  row in $T1$, it  does not  limit how many $T2$ rows can reference the  same  $T1.X$. We could have multiple $T2$ rows referencing the same $T1$ row. In Plan 1, that row in $T1$ would still appear  once  if any $T2$ row exists. In Plan 2, that same $T1$ row appears  as many times  as there are referencing rows in $T2$. Therefore, duplicates can arise in Plan 2, meaning the outputs differ.
 
 \newpage
 \section*{Question 4}
 \subsection*{(a)}
+
 
 \newpage
 \subsection*{(b)}
