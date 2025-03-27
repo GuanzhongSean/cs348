@@ -187,9 +187,108 @@ While $T2.W$ being a foreign key to $T1.X$ guarantees that every $T2$ row matche
 \newpage
 \section*{Question 4}
 \subsection*{(a)}
+\subsubsection*{$H_1: w_1[x],w_1[y],r_2[u],w_1[z],w_2[x],r_2[y],w_1[u]$}
 
+Notable conflicts:
+\begin{itemize}
+  \item $w_1[x]$ precedes $w_2[x]\Rightarrow$ $T_1 \to T_2$
+  \item $w_1[y]$ precedes $r_2[y]\Rightarrow$ $T_1 \to T_2$
+  \item $r_2[u]$ precedes $w_1[u]\Rightarrow$ $T_2 \to T_1$
+\end{itemize}
+We see a cycle:
+$$
+  \boxed{T_1 \leftrightarrow T_2.}
+$$
+Thus, $H_1$ is not conflict-serializable.
+
+\subsubsection*{$H_2: w_1[x],w_1[y],r_2[u],w_2[x],r_2[y],w_2[y],w_1[z]$}
+
+Notable conflicts:
+\begin{itemize}
+  \item $w_1[x]$ precedes $w_2[x]\Rightarrow$ $T_1 \to T_2$
+  \item $w_1[y]$ precedes $r_2[y]\Rightarrow$ $T_1 \to T_2$
+  \item $w_1[y]$ precedes $w_2[y]\Rightarrow$ $T_1 \to T_2$
+\end{itemize}
+All conflicts go in one direction ($T_1 \to T_2$), with no edge from $T_2$ back to $T_1$. Thus, $H_2$ is conflict-serializable. Here is an equivalent history:
+$$
+  \boxed{H_2': w_1[x],w_1[y],w_2[x],r_2[y],w_2[y],w_1[z],r_2[u]}
+$$
+
+\subsubsection*{$H_3: r_1[x],r_2[y],w_2[x],r_1[z],r_3[z],w_3[z],w_1[z]$}
+Notable conflicts:
+\begin{itemize}
+  \item $r_1[z]$ precedes $w_3[z]\Rightarrow$ $T_1 \to T_3$
+  \item $r_3[z]$ precedes $w_1[z]\Rightarrow$ $T_3 \to T_1$
+\end{itemize}
+From $z$, we already see a cycle:
+$$
+  \boxed{T_1 \leftrightarrow T_3.}
+$$
+
+Thus, $H_3$ is not conflict-serializable.
+
+\subsubsection*{$H_4: w_1[x],w_2[u],w_2[y],w_1[y],w_3[x],w_3[u],w_1[z]$}
+Notable conflicts:
+\begin{itemize}
+  \item $w_1[x]$ precedes $w_3[x]\Rightarrow$ $T_1 \to T_3$
+  \item $w_2[y]$ precedes $w_1[y]\Rightarrow$ $T_2 \to T_1$
+  \item $w_2[u]$ precedes $w_3[u]\Rightarrow$ $T_2 \to T_3$
+\end{itemize}
+
+So we have edges:
+$$
+  T_2 \to T_1,\quad
+  T_1 \to T_3,\quad
+  T_2 \to T_3.
+$$
+No cycle is present. Thus, $H_4$ is conflict-serializable. Here is an equivalent history:
+$$
+  \boxed{H_4': w_1[z],w_1[x],w_2[u],w_2[y],w_1[y],w_3[u],w_3[x]}
+$$
 
 \newpage
 \subsection*{(b)}
+Execution flow:
+\begin{enumerate}
+  \item $w1[a]$:\\
+        $T_1$ acquires an exclusive lock on $a$. Succeeds immediately (no conflict yet).
+  \item $r2[a]$:\\
+        $T_2$ wants a shared lock on $a$, but $a$ is already held exclusively by $T_1$. Under strict 2PL, $T_1$ does not release until it commits. Therefore, $T_2$ must block at this request.
+  \item $r1[b]$:\\
+        $T_1$ requests a shared lock on $b$. No other transaction currently holds $b$, so $T_1$ gets the lock. Succeeds. And after this operation, $T_1$ has no more read on $b$, so $b$ is released.
+  \item $w3[b]$:\\
+        $T_3$ requests an exclusive lock on $b$. Succeeds immediately.
+  \item $c1$:\\
+        $T_1$ commits and releases lock on $a$. This unblocks $T_2$ (which was waiting for $a$). After $T_2$ completes $r2[a]$, $a$ will be released.
+  \item $r4[b]$:\\
+        $T_4$ wants a shared lock on $b$. But $T_3$ holds the exclusive lock on $b$. So $T_4$ must block until $T_3$ commits.
+  \item $w2[b]$:\\
+        Now $T_2$ (having been unblocked on $a$) eventually tries to write $b$. That requires an exclusive lock on $b$. But $T_3$ is still holding $b$ in exclusive mode, so $T_2$ also blocks here.
+  \item $c3$:\\
+        $T_3$ commits and releases its exclusive lock on $b$. This unblocks both $T_4$ (which wanted a shared lock) and $T_2$ (which wanted an exclusive lock).
+  \item $c4$:\\
+        $T_4$ commits, released its lock on $b$, which mean $T_2$ is now holding $b$.
+  \item $a2$\\
+        Finally $T_2$ aborts, releasing $b$.
+\end{enumerate}
+
+\subsubsection*{(i) Who Blocks?}
+\begin{itemize}
+  \item At step 2, $T_2$ blocks (waiting on $a$).
+  \item At step 6, $T_4$ blocks (waiting on $b$).
+  \item At step 7, $T_2$ blocks (waiting on $b$).
+\end{itemize}
+
+\subsubsection*{(ii) Is There a Deadlock?}
+No. A deadlock would require a cycle of transactions waiting for each other. Here:
+
+\begin{itemize}
+  \item $T_1$ is never blocked.
+  \item $T_3$ waits for $T_1$, but $T_1$ is not waiting for $T_3$. Then $T_3$ commits, unblocking $T_2$ and $T_4$.
+  \item $T_4$ and $T_2$ end up waiting for $T_3$, but $T_3$ is not waiting on them.
+  \item Eventually each transaction is unblocked in turn, and no cycle of waits arises.
+\end{itemize}
+
+Hence no deadlock occurs.
 
 \end{document}
